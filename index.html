@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Kuis Logika SD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { background: #f5f5ff; font-family: 'Segoe UI', Arial, sans-serif; margin: 0; }
+        .container { display: flex; gap:32px; align-items: flex-start; padding: 24px 0 24px 24px;}
+        .frame, #progressBox {
+            background: #fff;
+            border-radius: 22px;
+            box-shadow: 0 2px 16px #0002;
+            padding: 34px 32px 32px 32px;
+            margin: 0 0 24px 0;
+            min-width: 420px;
+            max-width: 530px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #timer { font-size: 2.4em; color: #e84118; font-weight: bold; margin-bottom: 18px; }
+        #soalNum { font-size: 1.3em; margin-bottom: 10px; }
+        #soalText { font-size: 2em; margin: 16px 0 14px 0; font-weight: bold;}
+        #pilihan label { font-size: 1.25em; margin-left: 8px;}
+        #btnJawab, #btnLanjut, #btnUlang, #btnSelesai {
+            font-size: 1.2em; padding: 10px 32px; border: 0; border-radius: 9px; margin: 16px 14px 0 0;
+            color: white; background: #26de81; cursor: pointer; transition: 0.18s;
+            box-shadow: 0 2px 8px #0001;
+        }
+        #btnJawab { background: #26de81;}
+        #btnLanjut { background: #298be5;}
+        #btnUlang { background: #16a085;}
+        #btnSelesai { background: #e74c3c;}
+        #btnJawab:disabled { opacity: 0.5; }
+        #result { margin-top: 16px; font-size: 1.13em; }
+        #progressBox {
+            padding: 28px 32px 24px 32px;
+        }
+        #progressMap {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+        }
+        .progress-row {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px 7px;
+            margin-bottom: 0;
+            width: 100%;
+        }
+        .progcell {
+            display: flex; align-items: center; justify-content: center;
+            background: #ffe13b;
+            border-radius: 12px;
+            width: 26px; height: 26px;
+            font-size: 0.86em;
+            font-weight: bold;
+            color: #444;
+            border: 2px solid #ffe13b;
+            box-sizing: border-box;
+            transition: 0.12s;
+        }
+        .progcell.active { border: 2.6px solid #c10000; background: #fff; color: #c10000; }
+        .progcell.done { background: #358aff; color: #fff; border:2.6px solid #358aff;}
+        .progcell.wrong { background: #ee4646; color: #fff; border:2.6px solid #c10000;}
+        .row-divider {
+            border-bottom: 2px solid #e0e0e0;
+            width: 100%;
+            margin: 8px 0 8px 0;
+        }
+        /* Halaman pembuka */
+        #openingPage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f5f5ff;
+            position: fixed;
+            width: 100vw;
+            z-index: 10;
+            left: 0; top: 0;
+        }
+        .opening-box {
+            background: #fff;
+            border-radius: 22px;
+            box-shadow: 0 2px 16px #0002;
+            padding: 36px 38px 38px 38px;
+            min-width: 430px;
+            max-width: 540px;
+            width: 95vw;
+            text-align: center;
+        }
+        .opening-title {
+            font-size: 1.4em; font-weight: bold; color: #2c3e50; margin-bottom: 10px;
+        }
+        .opening-desc {
+            font-size: 1.15em; margin-bottom: 26px;
+        }
+        .child-list { margin-bottom: 32px; text-align: left; }
+        .child-item {
+            font-size: 1.18em;
+            margin: 12px 0;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .child-item span.emoji { font-size: 1.33em; }
+        #btnStart {
+            padding: 12px 40px; background: #26de81; color: #fff; border: none; border-radius: 12px; font-size: 1.15em; cursor: pointer;
+            margin-top: 8px; margin-bottom: 4px;
+        }
+        #countdownBox {
+            margin-top: 22px;
+            font-size: 2.6em;
+            font-weight: bold;
+            color: orange;
+            min-height: 56px;
+            transition: 0.2s;
+        }
+        #countdownBox span { color:#358aff; font-size:1.7em; margin-left:16px; }
+        .copyright {
+            color: #888; font-size: 1em; margin-top: 22px; margin-bottom: 4px; text-align: center;
+        }
+        @media (max-width: 1100px) {
+            .container { flex-direction:column; gap:14px; padding-left: 0;}
+            .frame, #progressBox { min-width:unset; max-width:unset; }
+            .progcell { width:20px; height:20px; font-size:0.68em;}
+            #soalText { font-size:1.2em;}
+            #openingPage, .opening-box { min-width: unset; max-width: unset; }
+        }
+        @media (max-width: 900px) {
+            .progcell { width:17px; height:17px; font-size:0.6em;}
+        }
+    </style>
+</head>
+<body>
+    <!-- Halaman pembuka -->
+    <div id="openingPage">
+        <div class="opening-box">
+            <div class="opening-title">🧮 Latihan Logika Matematika, Bahasa Indonesia, dan Bahasa Inggris</div>
+            <div class="opening-desc">
+                Ini adalah latihan untuk belajar bagi anak-anak.<br>
+                <b>Soal latihan Matematika, Bahasa Indonesia, dan Bahasa Inggris ini saya persembahkan untuk anak-anak saya:</b>
+            </div>
+            <div class="child-list">
+                <div class="child-item"><span class="emoji">👦</span> Damar Abqary Sandiwarno</div>
+                <div class="child-item"><span class="emoji">🧑</span> Abdullah Shidiq Abqary Sandiwarno</div>
+                <div class="child-item"><span class="emoji">🧑</span> Abdillah Shidiq Abqary Sandiwarno</div>
+            </div>
+            <button id="btnStart">Mulai Latihan</button>
+            <div id="countdownBox"></div>
+            <div class="copyright">© 2025 Sulis Sandiwarno. All rights reserved.</div>
+        </div>
+    </div>
+
+    <div class="container" style="z-index:1; position:relative;">
+        <div class="frame"></div>
+        <div id="progressBox">
+            <div id="progressMap"></div>
+        </div>
+    </div>
+
+<script>
+// ---- Proteksi dasar agar tidak mudah di-inspect ----
+document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+document.onkeydown = function(e) {
+    if (e.keyCode == 123) { return false; }
+    if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) { return false; }
+    if (e.ctrlKey && e.keyCode == 85) { return false; }
+};
+setTimeout(function(){
+  if (window.console) {
+    console.log("%cDilarang mengutak-atik kode ini! © Sulis Sandiwarno", "color: red; font-size: 20px; font-weight: bold;");
+  }
+},1000);
+
+// ---------- SOAL ----------
+// Ganti dengan kumpulan soalmu, pastikan jumlahnya >= 200
+let semuaSoal = [
+    {"pertanyaan": "🔺 🔷 🔺 🔷 🔺 ... Apa berikutnya?", "jawaban_benar": "🔷", "pilihan": ["🔺", "🔷", "⬛", "⭐"]},
+{"pertanyaan": "1, 3, 5, 7, ... Angka selanjutnya?", "jawaban_benar": "9", "pilihan": ["9", "10", "8", "6"]},
+{"pertanyaan": "10, 20, 30, ... ?", "jawaban_benar": "40", "pilihan": ["35", "40", "50", "30"]},
+{"pertanyaan": "🟦 🟥 🟦 🟥 🟦 ... ?", "jawaban_benar": "🟥", "pilihan": ["🟩", "🟨", "🟥", "🟦"]},
+{"pertanyaan": "2, 4, 8, 16, ... ?", "jawaban_benar": "32", "pilihan": ["24", "30", "32", "20"]},
+{"pertanyaan": "5, 10, 15, 20, ... ?", "jawaban_benar": "25", "pilihan": ["30", "35", "25", "20"]},
+{"pertanyaan": "🔶 🔷 🔶 🔷 ... ?", "jawaban_benar": "🔶", "pilihan": ["🔶", "🔷", "🟥", "⬛"]},
+{"pertanyaan": "50, 45, 40, 35, ... ?", "jawaban_benar": "30", "pilihan": ["20", "25", "30", "35"]},
+{"pertanyaan": "1, 2, 4, 8, 16, ... ?", "jawaban_benar": "32", "pilihan": ["24", "32", "36", "30"]},
+{"pertanyaan": "🔺 🔺 🔷 🔷 🔺 🔺 🔷 ... ?", "jawaban_benar": "🔷", "pilihan": ["🔺", "🔷", "⬛", "⭐"]},
+{"pertanyaan": "7, 14, 21, ... ?", "jawaban_benar": "28", "pilihan": ["28", "30", "24", "25"]},
+{"pertanyaan": "3, 6, 9, ... ?", "jawaban_benar": "12", "pilihan": ["10", "11", "12", "13"]},
+{"pertanyaan": "🔷 🔷 🔶 🔶 🔷 🔷 ... ?", "jawaban_benar": "🔶", "pilihan": ["🔷", "🔶", "🟥", "⬛"]},
+{"pertanyaan": "100, 90, 80, 70, ... ?", "jawaban_benar": "60", "pilihan": ["50", "60", "70", "65"]},
+{"pertanyaan": "📀 📀 📼 📼 📀 📀 ... ?", "jawaban_benar": "📼", "pilihan": ["📀", "📼", "💿", "🎞️"]},
+{"pertanyaan": "🔺 🔺 🔺 🔷 🔷 🔷 🔺 ... ?", "jawaban_benar": "🔺", "pilihan": ["🔺", "🔷", "⬛", "⭐"]},
+{"pertanyaan": "A, B, C, D, ... ?", "jawaban_benar": "E", "pilihan": ["E", "F", "G", "D"]},
+{"pertanyaan": "Z, Y, X, W, ... ?", "jawaban_benar": "V", "pilihan": ["V", "U", "T", "W"]},
+{"pertanyaan": "2, 3, 5, 7, 11, ... ?", "jawaban_benar": "13", "pilihan": ["12", "13", "14", "15"]},
+{"pertanyaan": "10, 15, 20, ... ?", "jawaban_benar": "25", "pilihan": ["22", "25", "28", "30"]},
+{"pertanyaan": "4, 9, 16, 25, ... ?", "jawaban_benar": "36", "pilihan": ["30", "36", "42", "32"]},
+{"pertanyaan": "1, 1, 2, 3, 5, 8, ... ?", "jawaban_benar": "13", "pilihan": ["11", "12", "13", "14"]},
+{"pertanyaan": "🟡 🔵 🟡 🔵 ... ?", "jawaban_benar": "🟡", "pilihan": ["🔵", "🟢", "🟡", "🔺"]},
+{"pertanyaan": "5, 10, 20, 40, ... ?", "jawaban_benar": "80", "pilihan": ["60", "70", "80", "100"]},
+{"pertanyaan": "6, 12, 24, 48, ... ?", "jawaban_benar": "96", "pilihan": ["90", "96", "98", "100"]},
+{"pertanyaan": "100, 80, 60, 40, ... ?", "jawaban_benar": "20", "pilihan": ["10", "20", "30", "40"]},
+{"pertanyaan": "🔴 🔵 🔴 🔵 🔴 ... ?", "jawaban_benar": "🔵", "pilihan": ["🔴", "🔵", "⚫", "⚪"]},
+{"pertanyaan": "0, 2, 4, 6, ... ?", "jawaban_benar": "8", "pilihan": ["6", "7", "8", "9"]},
+{"pertanyaan": "3, 6, 12, 24, ... ?", "jawaban_benar": "48", "pilihan": ["36", "48", "54", "60"]},
+{"pertanyaan": "15, 13, 11, 9, ... ?", "jawaban_benar": "7", "pilihan": ["5", "6", "7", "8"]},
+{"pertanyaan": "200, 100, 50, 25, ... ?", "jawaban_benar": "12.5", "pilihan": ["10", "12.5", "15", "20"]},
+{"pertanyaan": "1, 4, 9, 16, 25, ... ?", "jawaban_benar": "36", "pilihan": ["30", "32", "36", "38"]},
+{"pertanyaan": "9, 18, 27, ... ?", "jawaban_benar": "36", "pilihan": ["35", "36", "37", "38"]},
+{"pertanyaan": "3, 1, -1, -3, ... ?", "jawaban_benar": "-5", "pilihan": ["-4", "-5", "-6", "-7"]},
+{"pertanyaan": "🌧️ Hari mendung dan tidak membawa payung. Apakah bisa kehujanan?", "jawaban_benar": "Ya", "pilihan": ["Ya", "Tidak", "Mungkin", "Jarang"]},
+{"pertanyaan": "🧊 Es batu di bawah sinar matahari akan?", "jawaban_benar": "Mencair", "pilihan": ["Mencair", "Membeku", "Mengembang", "Menebal"]},
+{"pertanyaan": "🍚 Jika tidak makan seharian, tubuh akan?", "jawaban_benar": "Lemas", "pilihan": ["Kuat", "Lemas", "Nyaman", "Berat"]},
+{"pertanyaan": "🛌 Tidur larut malam menyebabkan?", "jawaban_benar": "Mengantuk", "pilihan": ["Segar", "Mengantuk", "Cepat bangun", "Lapar"]},
+{"pertanyaan": "📚 Belajar setiap hari membuat kita jadi?", "jawaban_benar": "Pintar", "pilihan": ["Pintar", "Bosan", "Lupa", "Capek"]},
+{"pertanyaan": "🚪 Pintu terbuka terkena angin besar akan?", "jawaban_benar": "Tertutup", "pilihan": ["Tertutup", "Retak", "Menghilang", "Patah"]},
+{"pertanyaan": "🎈 Meniup balon terlalu besar bisa?", "jawaban_benar": "Meletus", "pilihan": ["Mengempis", "Meletus", "Terlipat", "Pecah"]},
+{"pertanyaan": "🌞 Matahari terbit membuat hari menjadi?", "jawaban_benar": "Terang", "pilihan": ["Gelap", "Terang", "Hujan", "Petir"]},
+{"pertanyaan": "📺 Menyalakan TV membuat layar?", "jawaban_benar": "Menyala", "pilihan": ["Gelap", "Rusak", "Menyala", "Beku"]},
+{"pertanyaan": "🍎 Makan apel membuat kita merasa?", "jawaban_benar": "Kenyang", "pilihan": ["Kenyang", "Haus", "Ngantuk", "Sakit"]},
+{"pertanyaan": "🌞 Matahari terbit dari arah barat. Apakah itu benar?", "jawaban_benar": "Tidak", "pilihan": ["Ya", "Tidak"]},
+{"pertanyaan": "🚲 Naik sepeda ke sekolah artinya tidak?", "jawaban_benar": "Naik mobil", "pilihan": ["Naik mobil", "Berjalan kaki", "Naik becak", "Lari"]},
+{"pertanyaan": "⏰ Alarm berbunyi saat pagi agar kita?", "jawaban_benar": "Bangun", "pilihan": ["Tidur", "Bangun", "Makan", "Mandi"]},
+{"pertanyaan": "🧼 Cuci tangan pakai sabun hasilnya?", "jawaban_benar": "Bersih", "pilihan": ["Kotor", "Bersih", "Lengket", "Kering"]},
+{"pertanyaan": "📞 Telepon berdering berarti kita harus?", "jawaban_benar": "Menjawab", "pilihan": ["Menjawab", "Diam", "Menutup", "Lari"]},
+{"pertanyaan": "📮 Surat dimasukkan ke kotak pos lalu?", "jawaban_benar": "Terkirim", "pilihan": ["Dibuang", "Hilang", "Terkirim", "Tertunda"]},
+{"pertanyaan": "🐕 Anjing menggonggong saat ada?", "jawaban_benar": "Orang asing", "pilihan": ["Kucing", "Makan", "Orang asing", "Tidur"]},
+{"pertanyaan": "🌧️ Setelah hujan biasanya muncul?", "jawaban_benar": "Pelangi", "pilihan": ["Petir", "Pelangi", "Awan", "Gempa"]},
+{"pertanyaan": "🔌 Cabut colokan listrik jika?", "jawaban_benar": "Selesai digunakan", "pilihan": ["Listrik padam", "Air habis", "Selesai digunakan", "Lampu mati"]},
+{"pertanyaan": "👟 Sepatu digunakan di bagian tubuh?", "jawaban_benar": "Kaki", "pilihan": ["Kepala", "Tangan", "Kaki", "Leher"]},
+{"pertanyaan": "🧃 Minum saat haus membuat kita?", "jawaban_benar": "Segar", "pilihan": ["Segar", "Lapar", "Ngantuk", "Kenyang"]},
+{"pertanyaan": "🛵 Naik motor harus memakai?", "jawaban_benar": "Helm", "pilihan": ["Sepatu", "Helm", "Sarung tangan", "Tas"]},
+{"pertanyaan": "📖 Buku digunakan untuk?", "jawaban_benar": "Membaca", "pilihan": ["Memasak", "Membaca", "Menutup pintu", "Tidur"]},
+{"pertanyaan": "💡 Lampu menyala saat?", "jawaban_benar": "Listrik hidup", "pilihan": ["Malam", "Listrik hidup", "Mati lampu", "Siang"]},
+{"pertanyaan": "🐈 Kucing suka makan?", "jawaban_benar": "Ikan", "pilihan": ["Nasi", "Sayur", "Ikan", "Roti"]},
+{"pertanyaan": "🦷 Sikat gigi dilakukan saat?", "jawaban_benar": "Pagi dan malam", "pilihan": ["Siang", "Sore", "Malam saja", "Pagi dan malam"]},
+{"pertanyaan": "🧊 Es dalam minuman membuatnya?", "jawaban_benar": "Dingin", "pilihan": ["Panas", "Hangat", "Dingin", "Kering"]},
+{"pertanyaan": "🎨 Menggambar memerlukan?", "jawaban_benar": "Pensil", "pilihan": ["Kertas", "Pisau", "Pensil", "Komputer"]},
+{"pertanyaan": "🚰 Air minum sebaiknya dari?", "jawaban_benar": "Air matang", "pilihan": ["Sungai", "Kolam", "Air mentah", "Air matang"]},
+{"pertanyaan": "🚌 Transportasi umum contohnya?", "jawaban_benar": "Bus", "pilihan": ["Motor", "Mobil pribadi", "Bus", "Traktor"]},
+{"pertanyaan": "💤 Istirahat yang baik dilakukan dengan?", "jawaban_benar": "Tidur", "pilihan": ["Menonton", "Tidur", "Bermain", "Belajar"]},
+{"pertanyaan": "📢 Jika ingin didengar banyak orang, kita harus?", "jawaban_benar": "Berbicara keras", "pilihan": ["Diam", "Berbisik", "Menulis", "Berbicara keras"]},
+{"pertanyaan": "🧠 Belajar melatih?", "jawaban_benar": "Otak", "pilihan": ["Kaki", "Otak", "Tangan", "Mata"]},
+{"pertanyaan": "📆 Hari sebelum Minggu adalah?", "jawaban_benar": "Sabtu", "pilihan": ["Senin", "Sabtu", "Jumat", "Kamis"]},
+{"pertanyaan": "📐 Berapa jumlah sisi segitiga?", "jawaban_benar": "3", "pilihan": ["2", "3", "4", "5"]},
+{"pertanyaan": "⬛ Persegi memiliki berapa sudut siku-siku?", "jawaban_benar": "4", "pilihan": ["2", "3", "4", "5"]},
+{"pertanyaan": "🔵 Lingkaran memiliki berapa sisi?", "jawaban_benar": "0", "pilihan": ["0", "1", "2", "Tak hingga"]},
+{"pertanyaan": "🔷 Segi enam memiliki berapa sisi?", "jawaban_benar": "6", "pilihan": ["5", "6", "7", "8"]},
+{"pertanyaan": "🟥 Segi empat memiliki berapa sisi?", "jawaban_benar": "4", "pilihan": ["3", "4", "5", "6"]},
+{"pertanyaan": "📏 Berapa jumlah sudut pada segi lima?", "jawaban_benar": "5", "pilihan": ["3", "4", "5", "6"]},
+{"pertanyaan": "🟩 Bangun datar dengan dua sisi sejajar disebut?", "jawaban_benar": "Trapesium", "pilihan": ["Trapesium", "Layang-layang", "Persegi", "Jajar genjang"]},
+{"pertanyaan": "🔺 Bangun datar dengan tiga sisi disebut?", "jawaban_benar": "Segitiga", "pilihan": ["Segitiga", "Persegi", "Segi lima", "Trapesium"]},
+{"pertanyaan": "⬜ Persegi panjang memiliki berapa sudut siku-siku?", "jawaban_benar": "4", "pilihan": ["2", "3", "4", "5"]},
+{"pertanyaan": "💠 Jajar genjang memiliki berapa sisi sejajar?", "jawaban_benar": "2 pasang", "pilihan": ["1 pasang", "2 pasang", "3 pasang", "semua tidak sejajar"]},
+{"pertanyaan": "🟦 Apakah lingkaran memiliki sisi?", "jawaban_benar": "Tidak", "pilihan": ["Ya", "Tidak", "Kadang-kadang", "Tidak tahu"]},
+{"pertanyaan": "🟠 Bangun datar yang tidak memiliki sudut adalah?", "jawaban_benar": "Lingkaran", "pilihan": ["Persegi", "Segitiga", "Lingkaran", "Segi enam"]},
+{"pertanyaan": "🔳 Bangun ini berbentuk?", "jawaban_benar": "Persegi panjang", "pilihan": ["Layang-layang", "Persegi panjang", "Segi lima", "Segi enam"]},
+{"pertanyaan": "📐 Bangun ruang yang memiliki satu permukaan lengkung disebut?", "jawaban_benar": "Bola", "pilihan": ["Tabung", "Bola", "Kerucut", "Kubus"]},
+{"pertanyaan": "🔺 Segitiga sama sisi memiliki berapa sudut sama besar?", "jawaban_benar": "3", "pilihan": ["2", "3", "4", "Tidak tentu"]},
+{"pertanyaan": "📐 Bangun datar dengan dua sisi sejajar dan panjangnya tidak sama disebut?", "jawaban_benar": "Trapesium", "pilihan": ["Trapesium", "Jajar genjang", "Persegi", "Segitiga"]},
+{"pertanyaan": "📦 Kubus memiliki berapa sisi?", "jawaban_benar": "6", "pilihan": ["4", "5", "6", "8"]},
+{"pertanyaan": "🎁 Balok memiliki berapa rusuk?", "jawaban_benar": "12", "pilihan": ["8", "10", "12", "14"]},
+{"pertanyaan": "🧊 Kubus memiliki semua rusuk yang ...", "jawaban_benar": "Sama panjang", "pilihan": ["Berbeda panjang", "Sama panjang", "Tidak sejajar", "Tidak diketahui"]},
+{"pertanyaan": "📐 Banyak sudut dalam segi enam adalah?", "jawaban_benar": "6", "pilihan": ["4", "5", "6", "8"]},
+{"pertanyaan": "📦 Jumlah titik sudut pada balok adalah?", "jawaban_benar": "8", "pilihan": ["6", "8", "10", "12"]},
+{"pertanyaan": "🧺 Tabung memiliki berapa sisi datar?", "jawaban_benar": "2", "pilihan": ["1", "2", "3", "4"]},
+{"pertanyaan": "⛺ Kerucut memiliki berapa sisi?", "jawaban_benar": "2", "pilihan": ["1", "2", "3", "4"]},
+{"pertanyaan": "🎲 Sebuah dadu berbentuk?", "jawaban_benar": "Kubus", "pilihan": ["Kubus", "Bola", "Balok", "Tabung"]},
+{"pertanyaan": "🟣 Lingkaran adalah bangun yang memiliki?", "jawaban_benar": "Tidak ada sisi", "pilihan": ["1 sisi", "2 sisi", "Tak hingga", "Tidak ada sisi"]},
+{"pertanyaan": "🔷 Berapa jumlah sisi segi delapan?", "jawaban_benar": "8", "pilihan": ["6", "7", "8", "9"]},
+{"pertanyaan": "📐 Banyak sisi dalam bangun segi lima adalah?", "jawaban_benar": "5", "pilihan": ["4", "5", "6", "7"]},
+{"pertanyaan": "🔺 Sudut dalam segitiga totalnya berjumlah?", "jawaban_benar": "180°", "pilihan": ["90°", "180°", "270°", "360°"]},
+{"pertanyaan": "📏 Alat ukur panjang adalah?", "jawaban_benar": "Penggaris", "pilihan": ["Penghapus", "Spidol", "Penggaris", "Pensil"]},
+{"pertanyaan": "🎡 Roda berbentuk?", "jawaban_benar": "Lingkaran", "pilihan": ["Persegi", "Lingkaran", "Segi enam", "Oval"]},
+{"pertanyaan": "🧱 Dinding biasanya berbentuk?", "jawaban_benar": "Persegi panjang", "pilihan": ["Layang-layang", "Persegi panjang", "Trapesium", "Segitiga"]},
+{"pertanyaan": "🪞 Cermin bundar berbentuk?", "jawaban_benar": "Lingkaran", "pilihan": ["Kotak", "Segi lima", "Lingkaran", "Segi tiga"]},
+
+{"pertanyaan": "🌳 Pohon apa yang daunnya jatuh saat musim gugur?", "jawaban_benar": "Pohon jati", "pilihan": ["Pohon jati", "Pohon kelapa", "Pohon pisang", "Pohon mangga"]},
+{"pertanyaan": "🐓 Hewan apa yang berkokok di pagi hari?", "jawaban_benar": "Ayam jantan", "pilihan": ["Ayam betina", "Ayam jantan", "Bebek", "Burung"]},
+{"pertanyaan": "🚦 Lampu merah artinya?", "jawaban_benar": "Berhenti", "pilihan": ["Jalan", "Berhenti", "Pelan", "Belok"]},
+{"pertanyaan": "🌙 Malam hari bulan terlihat di?", "jawaban_benar": "Langit", "pilihan": ["Bumi", "Langit", "Laut", "Gunung"]},
+{"pertanyaan": "🍌 Buah yang berwarna kuning dan bisa dikupas adalah?", "jawaban_benar": "Pisang", "pilihan": ["Apel", "Jeruk", "Pisang", "Mangga"]},
+{"pertanyaan": "🐟 Hewan yang hidup di air adalah?", "jawaban_benar": "Ikan", "pilihan": ["Burung", "Kucing", "Ikan", "Kelinci"]},
+{"pertanyaan": "🚲 Kendaraan roda dua yang digowes disebut?", "jawaban_benar": "Sepeda", "pilihan": ["Sepeda", "Mobil", "Motor", "Becak"]},
+{"pertanyaan": "☔️ Saat hujan sebaiknya memakai?", "jawaban_benar": "Payung", "pilihan": ["Topi", "Payung", "Sepatu", "Sapu"]},
+{"pertanyaan": "🐯 Hewan belang hitam putih adalah?", "jawaban_benar": "Zebra", "pilihan": ["Kucing", "Sapi", "Zebra", "Kuda"]},
+{"pertanyaan": "📚 Buku digunakan untuk?", "jawaban_benar": "Membaca", "pilihan": ["Menulis", "Menggambar", "Membaca", "Berhitung"]},
+{"pertanyaan": "🧃 Minuman segar berwarna jingga dari buah?", "jawaban_benar": "Jeruk", "pilihan": ["Apel", "Mangga", "Jeruk", "Semangka"]},
+{"pertanyaan": "🌞 Saat pagi hari matahari?", "jawaban_benar": "Terbit", "pilihan": ["Terbenam", "Terbit", "Menghilang", "Bersembunyi"]},
+{"pertanyaan": "🐇 Hewan kecil bertelinga panjang adalah?", "jawaban_benar": "Kelinci", "pilihan": ["Kucing", "Kelinci", "Tikus", "Anjing"]},
+{"pertanyaan": "🚀 Benda yang terbang ke luar angkasa?", "jawaban_benar": "Roket", "pilihan": ["Pesawat", "Roket", "Kapal", "Mobil"]},
+{"pertanyaan": "🎂 Makanan ulang tahun biasanya adalah?", "jawaban_benar": "Kue", "pilihan": ["Kue", "Roti", "Nasi", "Ayam"]},
+{"pertanyaan": "🌧️ Air yang jatuh dari langit disebut?", "jawaban_benar": "Hujan", "pilihan": ["Awan", "Hujan", "Petir", "Salju"]},
+{"pertanyaan": "🦆 Hewan berbulu, berjalan di air, bunyinya kwek-kwek?", "jawaban_benar": "Bebek", "pilihan": ["Ayam", "Bebek", "Burung", "Angsa"]},
+{"pertanyaan": "🛏️ Tempat untuk tidur disebut?", "jawaban_benar": "Tempat tidur", "pilihan": ["Lemari", "Meja", "Tempat tidur", "Kursi"]},
+{"pertanyaan": "🔴 Apel merah warnanya?", "jawaban_benar": "Merah", "pilihan": ["Kuning", "Hijau", "Merah", "Ungu"]},
+{"pertanyaan": "🧹 Untuk menyapu lantai digunakan?", "jawaban_benar": "Sapu", "pilihan": ["Sapu", "Pel", "Sendok", "Kuas"]},
+{"pertanyaan": "🦋 Hewan bersayap berwarna-warni adalah?", "jawaban_benar": "Kupu-kupu", "pilihan": ["Kupu-kupu", "Lebah", "Capung", "Nyamuk"]},
+{"pertanyaan": "🦀 Hewan berjalan miring di laut adalah?", "jawaban_benar": "Kepiting", "pilihan": ["Kepiting", "Ikan", "Udang", "Bintang laut"]},
+{"pertanyaan": "👂 Digunakan untuk mendengar adalah?", "jawaban_benar": "Telinga", "pilihan": ["Mata", "Telinga", "Hidung", "Mulut"]},
+{"pertanyaan": "👀 Digunakan untuk melihat adalah?", "jawaban_benar": "Mata", "pilihan": ["Hidung", "Mata", "Telinga", "Tangan"]},
+{"pertanyaan": "👃 Digunakan untuk mencium bau adalah?", "jawaban_benar": "Hidung", "pilihan": ["Mata", "Telinga", "Hidung", "Lidah"]},
+{"pertanyaan": "👄 Digunakan untuk berbicara adalah?", "jawaban_benar": "Mulut", "pilihan": ["Telinga", "Mata", "Mulut", "Hidung"]},
+{"pertanyaan": "🏠 Tempat tinggal kita disebut?", "jawaban_benar": "Rumah", "pilihan": ["Rumah", "Sekolah", "Toko", "Kantor"]},
+{"pertanyaan": "📅 Satu minggu ada berapa hari?", "jawaban_benar": "7", "pilihan": ["5", "6", "7", "8"]},
+{"pertanyaan": "🖍️ Crayon digunakan untuk?", "jawaban_benar": "Mewarnai", "pilihan": ["Mewarnai", "Menghapus", "Menulis", "Menggambar"]},
+{"pertanyaan": "🚗 Kendaraan beroda empat disebut?", "jawaban_benar": "Mobil", "pilihan": ["Motor", "Sepeda", "Mobil", "Bus"]},
+{"pertanyaan": "🚁 Kendaraan terbang berbaling-baling di atas?", "jawaban_benar": "Helikopter", "pilihan": ["Helikopter", "Pesawat", "Kapal", "Roket"]},
+{"pertanyaan": "🎸 Alat musik dipetik adalah?", "jawaban_benar": "Gitar", "pilihan": ["Piano", "Gitar", "Drum", "Suling"]},
+{"pertanyaan": "🛁 Digunakan untuk mandi adalah?", "jawaban_benar": "Bak mandi", "pilihan": ["Bak mandi", "Tempat tidur", "Kursi", "Meja"]},
+{"pertanyaan": "🦷 Untuk mengunyah makanan digunakan?", "jawaban_benar": "Gigi", "pilihan": ["Gigi", "Lidah", "Mata", "Kaki"]},
+{"pertanyaan": "🧤 Saat dingin, tangan memakai?", "jawaban_benar": "Sarung tangan", "pilihan": ["Topi", "Sarung tangan", "Sepatu", "Kaus kaki"]},
+{"pertanyaan": "🧦 Digunakan di kaki untuk menghangatkan adalah?", "jawaban_benar": "Kaus kaki", "pilihan": ["Sarung tangan", "Kaus kaki", "Topi", "Jaket"]},
+{"pertanyaan": "🌺 Bunga yang berwarna merah muda adalah?", "jawaban_benar": "Mawar", "pilihan": ["Mawar", "Melati", "Anggrek", "Tulip"]},
+{"pertanyaan": "🌵 Tanaman berduri di padang pasir adalah?", "jawaban_benar": "Kaktus", "pilihan": ["Kaktus", "Bambu", "Kelapa", "Mangga"]},
+{"pertanyaan": "🍯 Madu dibuat oleh?", "jawaban_benar": "Lebah", "pilihan": ["Burung", "Lebah", "Kupu-kupu", "Kumbang"]},
+{"pertanyaan": "👗 Baju panjang wanita disebut?", "jawaban_benar": "Gaun", "pilihan": ["Kaos", "Celana", "Gaun", "Rok"]},
+{"pertanyaan": "🐘 Hewan besar berbelalai panjang adalah?", "jawaban_benar": "Gajah", "pilihan": ["Badak", "Gajah", "Sapi", "Kuda"]},
+{"pertanyaan": "🧸 Mainan anak kecil yang empuk adalah?", "jawaban_benar": "Boneka", "pilihan": ["Boneka", "Mobil-mobilan", "Bola", "Balok"]},
+{"pertanyaan": "🍕 Makanan berbentuk bulat, dari Italia adalah?", "jawaban_benar": "Pizza", "pilihan": ["Pizza", "Burger", "Nasi goreng", "Pasta"]},
+{"pertanyaan": "🥚 Saat ayam bertelur, keluar?", "jawaban_benar": "Telur", "pilihan": ["Bulu", "Daging", "Telur", "Air"]},
+{"pertanyaan": "🍦 Makanan dingin manis dimakan saat panas adalah?", "jawaban_benar": "Es krim", "pilihan": ["Coklat", "Es krim", "Roti", "Sup"]},
+{"pertanyaan": "🍲 Makanan berkuah hangat disebut?", "jawaban_benar": "Sup", "pilihan": ["Sup", "Nasi", "Kue", "Roti"]},
+{"pertanyaan": "🌽 Tanaman kuning bulat-bulat disebut?", "jawaban_benar": "Jagung", "pilihan": ["Jagung", "Padi", "Gandum", "Kacang"]},
+{"pertanyaan": "🎤 Alat untuk berbicara di depan umum?", "jawaban_benar": "Mikrofon", "pilihan": ["Mikrofon", "Speaker", "Lampu", "Gitar"]},
+{"pertanyaan": "🧪 Tempat mencampur cairan di laboratorium adalah?", "jawaban_benar": "Tabung reaksi", "pilihan": ["Botol", "Tabung reaksi", "Gelas", "Mangkok"]},
+{"pertanyaan": "🛡️ Digunakan untuk melindungi diri dari serangan adalah?", "jawaban_benar": "Perisai", "pilihan": ["Perisai", "Topi", "Buku", "Papan tulis"]},
+{"pertanyaan": "🏞️ Tempat yang banyak pohon dan hewan disebut?", "jawaban_benar": "Hutan", "pilihan": ["Laut", "Hutan", "Gunung", "Padang rumput"]},
+
+{"pertanyaan": "🌞 What color is the sun?", "jawaban_benar": "Yellow", "pilihan": ["Blue", "Red", "Yellow", "Green"]},
+{"pertanyaan": "🍎 What fruit is red and round?", "jawawan_benar": "Apple", "pilihan": ["Banana", "Apple", "Orange", "Grape"]},
+{"pertanyaan": "🐶 Which animal barks?", "jawaban_benar": "Dog", "pilihan": ["Cat", "Dog", "Cow", "Duck"]},
+{"pertanyaan": "🐟 Where does a fish live?", "jawaban_benar": "Water", "pilihan": ["Tree", "Cage", "Water", "Sand"]},
+{"pertanyaan": "🚗 How many wheels does a car have?", "jawaban_benar": "Four", "pilihan": ["Two", "Three", "Four", "Six"]},
+{"pertanyaan": "🧃 What do you drink when you are thirsty?", "jawaban_benar": "Water", "pilihan": ["Bread", "Water", "Rice", "Sugar"]},
+{"pertanyaan": "🌙 When do you see the moon?", "jawaban_benar": "At night", "pilihan": ["Morning", "Noon", "At night", "Evening"]},
+{"pertanyaan": "🐘 Which animal has a long trunk?", "jawaban_benar": "Elephant", "pilihan": ["Dog", "Elephant", "Cat", "Mouse"]},
+{"pertanyaan": "🌳 What is big and has many leaves?", "jawaban_benar": "Tree", "pilihan": ["Tree", "Flower", "Grass", "Bush"]},
+{"pertanyaan": "🎒 What do you use to carry your books to school?", "jawaban_benar": "Bag", "pilihan": ["Hat", "Bag", "Shoes", "Belt"]},
+{"pertanyaan": "🍌 Which fruit is yellow and long?", "jawaban_benar": "Banana", "pilihan": ["Apple", "Orange", "Banana", "Pear"]},
+{"pertanyaan": "🚲 What do you ride with two wheels?", "jawaban_benar": "Bicycle", "pilihan": ["Car", "Bicycle", "Bus", "Train"]},
+{"pertanyaan": "🌧️ What falls from the sky when it rains?", "jawaban_benar": "Water", "pilihan": ["Leaves", "Sand", "Water", "Dust"]},
+{"pertanyaan": "🍦 What is cold, sweet, and eaten in summer?", "jawaban_benar": "Ice cream", "pilihan": ["Cake", "Ice cream", "Soup", "Bread"]},
+{"pertanyaan": "🖍️ What do you use to color pictures?", "jawaban_benar": "Crayon", "pilihan": ["Eraser", "Crayon", "Book", "Table"]},
+{"pertanyaan": "📖 What do you read?", "jawaban_benar": "Book", "pilihan": ["Bag", "Book", "Shoe", "Chair"]},
+{"pertanyaan": "🐦 Which animal can fly?", "jawaban_benar": "Bird", "pilihan": ["Dog", "Bird", "Cow", "Goat"]},
+{"pertanyaan": "🦁 Which animal is called the king of the jungle?", "jawaban_benar": "Lion", "pilihan": ["Tiger", "Lion", "Elephant", "Zebra"]},
+{"pertanyaan": "🐝 Who makes honey?", "jawaban_benar": "Bee", "pilihan": ["Bee", "Ant", "Butterfly", "Spider"]},
+{"pertanyaan": "🍓 What fruit is red, small, and has seeds on the outside?", "jawaban_benar": "Strawberry", "pilihan": ["Apple", "Strawberry", "Banana", "Mango"]},
+{"pertanyaan": "🦋 What animal changes from caterpillar?", "jawaban_benar": "Butterfly", "pilihan": ["Bee", "Butterfly", "Ant", "Fly"]},
+{"pertanyaan": "🌻 What flower is big and yellow?", "jawaban_benar": "Sunflower", "pilihan": ["Rose", "Sunflower", "Tulip", "Orchid"]},
+{"pertanyaan": "⏰ What wakes you up in the morning?", "jawaban_benar": "Alarm clock", "pilihan": ["Alarm clock", "Book", "Table", "Dog"]},
+{"pertanyaan": "🍚 What do you eat with soup?", "jawaban_benar": "Rice", "pilihan": ["Bread", "Rice", "Ice cream", "Chocolate"]},
+{"pertanyaan": "🦆 Which animal quacks?", "jawaban_benar": "Duck", "pilihan": ["Duck", "Goose", "Pig", "Chicken"]},
+{"pertanyaan": "🌺 Which is a beautiful flower?", "jawaban_benar": "Rose", "pilihan": ["Onion", "Rose", "Carrot", "Grass"]},
+{"pertanyaan": "🍕 What is a round Italian food with cheese?", "jawaban_benar": "Pizza", "pilihan": ["Burger", "Pizza", "Rice", "Cake"]},
+{"pertanyaan": "👃 What do you use to smell?", "jawaban_benar": "Nose", "pilihan": ["Mouth", "Eye", "Ear", "Nose"]},
+{"pertanyaan": "👀 What do you use to see?", "jawaban_benar": "Eyes", "pilihan": ["Nose", "Mouth", "Eyes", "Hand"]},
+{"pertanyaan": "👂 What do you use to hear?", "jawaban_benar": "Ears", "pilihan": ["Hand", "Ear", "Nose", "Foot"]},
+{"pertanyaan": "👄 What do you use to speak?", "jawaban_benar": "Mouth", "pilihan": ["Hand", "Nose", "Mouth", "Eye"]},
+{"pertanyaan": "🏠 Where do you live?", "jawaban_benar": "House", "pilihan": ["Shop", "House", "School", "Market"]},
+{"pertanyaan": "🚦 What does a red traffic light mean?", "jawaban_benar": "Stop", "pilihan": ["Go", "Stop", "Slow", "Turn"]},
+{"pertanyaan": "🎂 What do you blow out on your birthday?", "jawaban_benar": "Candles", "pilihan": ["Candles", "Balloons", "Lights", "Fire"]},
+{"pertanyaan": "🐱 Which animal meows?", "jawaban_benar": "Cat", "pilihan": ["Cat", "Dog", "Bird", "Frog"]},
+{"pertanyaan": "🦖 Which animal lived long ago and is now extinct?", "jawaban_benar": "Dinosaur", "pilihan": ["Tiger", "Dinosaur", "Lion", "Shark"]},
+{"pertanyaan": "🔵 What shape has no sides or corners?", "jawaban_benar": "Circle", "pilihan": ["Square", "Triangle", "Circle", "Rectangle"]},
+{"pertanyaan": "⬜ How many corners does a square have?", "jawaban_benar": "Four", "pilihan": ["Two", "Three", "Four", "Five"]},
+{"pertanyaan": "⬛ What color is the night sky?", "jawaban_benar": "Black", "pilihan": ["Black", "Yellow", "Pink", "Brown"]},
+{"pertanyaan": "🌲 What is tall, green, and grows in forests?", "jawaban_benar": "Tree", "pilihan": ["Grass", "Tree", "Flower", "Rock"]},
+{"pertanyaan": "🐾 What do you call animal feet?", "jawaban_benar": "Paws", "pilihan": ["Hands", "Paws", "Wings", "Horns"]},
+{"pertanyaan": "🚀 What flies to the moon?", "jawaban_benar": "Rocket", "pilihan": ["Airplane", "Rocket", "Helicopter", "Bus"]},
+{"pertanyaan": "🍳 What do you get from a chicken?", "jawaban_benar": "Egg", "pilihan": ["Milk", "Egg", "Bread", "Meat"]},
+{"pertanyaan": "🐥 What is a baby chicken called?", "jawaban_benar": "Chick", "pilihan": ["Duckling", "Chick", "Kitten", "Puppy"]},
+{"pertanyaan": "🥚 What is white and breaks easily?", "jawaban_benar": "Egg", "pilihan": ["Stone", "Egg", "Wood", "Iron"]},
+{"pertanyaan": "🍞 What is made from flour and baked?", "jawaban_benar": "Bread", "pilihan": ["Rice", "Bread", "Milk", "Egg"]},
+{"pertanyaan": "🧸 What is a soft toy for kids?", "jawaban_benar": "Teddy bear", "pilihan": ["Ball", "Teddy bear", "Car", "Block"]},
+{"pertanyaan": "📚 Where do you go to study and meet your teacher?", "jawaban_benar": "School", "pilihan": ["Market", "Office", "School", "Hospital"]},
+{"pertanyaan": "🦖 What animal has sharp teeth and lived long ago?", "jawaban_benar": "Dinosaur", "pilihan": ["Dog", "Cat", "Dinosaur", "Frog"]},
+{"pertanyaan": "🧁 What is small, sweet, and eaten for dessert?", "jawaban_benar": "Cupcake", "pilihan": ["Bread", "Cupcake", "Soup", "Rice"]},
+{"pertanyaan": "🍭 What is colorful and sweet on a stick?", "jawaban_benar": "Lollipop", "pilihan": ["Cake", "Lollipop", "Chocolate", "Ice cream"]},
+{"pertanyaan": "🧊 What makes water cold?", "jawaban_benar": "Ice", "pilihan": ["Fire", "Sand", "Ice", "Air"]}
+
+];
+// Duplikat otomatis sampai 200 soal jika kurang (pastikan tidak ada duplikasi nyata pada sumber aslimu!)
+while (semuaSoal.length < 200) semuaSoal = semuaSoal.concat(semuaSoal.slice(0, 200-semuaSoal.length));
+semuaSoal = semuaSoal.slice(0,200);
+
+let soalAcak = semuaSoal.slice().sort(()=>Math.random()-0.5);
+let indexSoal = 0, skorBenar = 0, statusSoal = Array(soalAcak.length).fill('');
+let timerInterval, waktuSisa = 120*60 // 90 menit default
+
+document.getElementById('btnStart').onclick = function() {
+    let countdown = 3;
+    document.getElementById('btnStart').disabled = true;
+    const cdBox = document.getElementById('countdownBox');
+    cdBox.innerHTML = `<span>🕒</span> Mulai dalam... <span id="cdVal">${countdown}</span>`;
+    let cdInterval = setInterval(()=>{
+        countdown--;
+        document.getElementById('cdVal').textContent = countdown > 0 ? countdown : "Mulai!";
+        if(countdown==0){
+            setTimeout(()=>{
+                clearInterval(cdInterval);
+                document.getElementById('openingPage').style.display = 'none';
+                countdownMulai(()=>{
+                    mulaiTimer();
+                    tampilkanSoal(indexSoal);
+                });
+            }, 900);
+        }
+    }, 950);
+};
+
+function countdownMulai(cb) {
+    let frame = document.querySelector('.frame');
+    let progressBox = document.getElementById('progressBox');
+    frame.innerHTML = `
+        <div id="timer"></div>
+        <div id="soalNum"></div>
+        <div id="soalText"></div>
+        <form id="pilihan"></form>
+        <div id="result"></div>
+        <button id="btnJawab" onclick="jawab();return false;">🧠 Jawab</button>
+        <button id="btnLanjut" onclick="lanjut();return false;" style="display:none;">➡️ Lanjut</button>
+        <button id="btnUlang" onclick="mainUlang();return false;" style="display:none;">🔁 Main Lagi</button>
+        <button id="btnSelesai" onclick="selesai();return false;" style="display:none;">❌ Selesai</button>
+    `;
+    progressBox.style.display = '';
+    cb();
+}
+
+function mulaiTimer() {
+    clearInterval(timerInterval);
+    waktuSisa = 120*60;
+    updateTimer();
+    timerInterval = setInterval(()=>{
+        waktuSisa--;
+        updateTimer();
+        if(waktuSisa<=0) {
+            clearInterval(timerInterval);
+            tampilkanHasil();
+        }
+    }, 1000);
+}
+function updateTimer() {
+    let m = Math.floor(waktuSisa/60), d = waktuSisa%60;
+    document.getElementById('timer').innerHTML = `Sisa waktu:<br><span style="font-size:1.3em">${m<10?'0':''}${m}:${d<10?'0':''}${d}</span>`;
+}
+function tampilkanSoal(i) {
+    let s = soalAcak[i];
+    document.getElementById('soalNum').innerHTML = `<h2>Soal ${i+1} dari 200</h2>`;
+    document.getElementById('soalText').innerHTML = s.pertanyaan;
+    let f = document.getElementById('pilihan'); f.innerHTML='';
+    s.pilihan.forEach((p,j)=>{
+        let id = "p"+j;
+        f.innerHTML += `<div><input type="radio" name="pilihan" id="${id}" value="${p}" onclick="document.getElementById('btnJawab').disabled=false;">
+        <label for="${id}">${p}</label></div>`;
+    });
+    document.getElementById('btnJawab').style.display = '';
+    document.getElementById('btnJawab').disabled = true;
+    document.getElementById('result').innerHTML = '';
+    document.getElementById('btnLanjut').style.display = 'none';
+    document.getElementById('btnUlang').style.display = 'none';
+    document.getElementById('btnSelesai').style.display = 'none';
+    buatProgressMap();
+}
+function jawab() {
+    let radios = document.querySelectorAll('input[name="pilihan"]');
+    let jawaban = '';
+    radios.forEach(x=>{if(x.checked)jawaban=x.value;});
+    if(!jawaban) return false;
+    let s = soalAcak[indexSoal];
+    let benar = jawaban==s.jawaban_benar;
+    statusSoal[indexSoal] = benar ? 'done' : 'wrong';
+    if(benar) {
+        skorBenar++;
+        let audio = new Audio('https://www.soundjay.com/human/applause-01.mp3');
+        audio.play();
+    } else {
+        let audio = new Audio('https://www.soundjay.com/button/sounds/button-16.mp3');
+        audio.play();
+    }
+    document.getElementById('result').innerHTML = benar ?
+        `<span style="color:green;font-size:1.18em;">✅ Benar! Hebat!</span>` :
+        `<span style="color:red;font-size:1.13em;">❌ Belum tepat. Jawaban benar: <b>${s.jawaban_benar}</b></span>`;
+    radios.forEach(x=>x.disabled=true);
+    document.getElementById('btnJawab').disabled = true;
+    document.getElementById('btnLanjut').style.display = '';
+    buatProgressMap();
+    return false;
+}
+function lanjut() {
+    if(indexSoal < soalAcak.length-1) {
+        indexSoal++;
+        tampilkanSoal(indexSoal);
+    } else {
+        tampilkanHasil();
+    }
+    return false;
+}
+function tampilkanHasil() {
+    clearInterval(timerInterval);
+    document.getElementById('soalNum').innerHTML = '';
+    document.getElementById('soalText').innerHTML = '';
+    document.getElementById('pilihan').innerHTML = '';
+    document.getElementById('btnJawab').style.display = 'none';
+    document.getElementById('btnLanjut').style.display = 'none';
+    let nilai = Math.round((skorBenar/soalAcak.length)*100);
+    let motivasi = skorBenar==soalAcak.length ? "🌟 Sempurna! Kamu jenius!"
+      : skorBenar>=soalAcak.length*0.7 ? "👍 Bagus sekali, lanjutkan belajar!"
+      : skorBenar>=soalAcak.length*0.4 ? "😊 Sudah baik, terus coba lagi ya!"
+      : "💡 Belajar lebih sering agar makin hebat!";
+    document.getElementById('result').innerHTML = `
+        <h2 style="color:blue;">🎯 Skor: ${skorBenar}/${soalAcak.length} (Nilai: ${nilai}/100)</h2>
+        <p>${motivasi}</p>
+    `;
+    document.getElementById('btnUlang').style.display = '';
+    document.getElementById('btnSelesai').style.display = '';
+    buatProgressMap();
+}
+function mainUlang() {
+    skorBenar = 0; indexSoal = 0;
+    soalAcak = semuaSoal.slice().sort(()=>Math.random()-0.5);
+    statusSoal = Array(soalAcak.length).fill('');
+    document.getElementById('btnUlang').style.display = 'none';
+    document.getElementById('btnSelesai').style.display = 'none';
+    countdownMulai(()=>{
+      mulaiTimer();
+      tampilkanSoal(indexSoal);
+    });
+}
+function selesai() {
+    document.body.innerHTML = `<div style='margin-top:80px;text-align:center;font-size:2.2em'>
+        <style>
+            @keyframes blink { 0%,100% {opacity:1;} 50% {opacity:0;} }
+            .blink-emoji { animation: blink 1.2s infinite alternate; }
+        </style>
+        <h3>📚 Terima kasih sudah belajar logika bersama komputer! Sampai jumpa lagi!
+        <span class='blink-emoji'>👋</span></h3>
+    </div>`;
+}
+function buatProgressMap() {
+    let el = document.getElementById('progressMap');
+    let html = '';
+    for(let r=0; r<20; r++) {  // 20 baris x 10 kolom = 200
+        html += '<div class="progress-row">';
+        for(let c=0; c<10; c++) {
+            let i = r*10 + c;
+            let ccls = 'progcell';
+            if(statusSoal[i]=='done') ccls+=' done';
+            else if(statusSoal[i]=='wrong') ccls+=' wrong';
+            if(i==indexSoal && statusSoal[i]=='') ccls+=' active';
+            html += `<div class="${ccls}">${i+1}</div>`;
+        }
+        html += '</div>';
+        if(r<19) html += '<div class="row-divider"></div>';
+    }
+    el.innerHTML = html;
+}
+</script>
+<!-- © 2025 Sulis Sandiwarno. Jangan comot source code sembarangan ya :) -->
+</body>
+</html>
